@@ -1,0 +1,239 @@
+name: WinSCP Release
+
+permissions:
+  contents: read
+
+on:
+  workflow_dispatch:
+    inputs:
+      version:
+        description: Release version (e.g. 6.7.1). Leave empty to use ProductVersion from source/WinSCP.cbproj.
+        required: false
+        type: string
+      prerelease:
+        description: Mark the GitHub release as a pre-release
+        required: false
+        type: boolean
+        default: false
+      draft:
+        description: Create the GitHub release as a draft
+        required: false
+        type: boolean
+        default: false
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: false
+
+jobs:
+  prepare:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+
+    outputs:
+      version: ${{ steps.resolve.outputs.version }}
+      tag: ${{ steps.resolve.outputs.tag }}
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v7
+        with:
+          persist-credentials: false
+
+      - name: Resolve release version
+        id: resolve
+        shell: bash
+        env:
+          INPUT_VERSION: ${{ inputs.version }}
+        run: |
+          set -euo pipefail
+
+          if [ -n "$INPUT_VERSION" ]; then
+            version="$INPUT_VERSION"
+          elif [ -f source/WinSCP.cbproj ]; then
+            raw="$(grep -o 'ProductVersion=[0-9.]*' source/WinSCP.cbproj | head -1 | cut -d= -f2)"
+            version="$(printf '%s' "$raw" | sed -E 's/^([0-9]+\.[0-9]+\.[0-9]+)\.0$/\1/')"
+          else
+            echo "ERROR: No version input and source/WinSCP.cbproj is missing."
+            exit 1
+          fi
+
+          if ! printf '%s' "$version" | grep -Eq '^[0-9]+\.[0-9]+\.[0-9]+$'; then
+            echo "ERROR: Version must match X.Y.Z (got '$version')."
+            exit 1
+          fi
+
+          echo "version=$version" >> "$GITHUB_OUTPUT"
+          echo "tag=v$version" >> "$GITHUB_OUTPUT"
+          echo "Resolved release version $version (tag v$version)"
+
+  build-and-release:
+    runs-on: windows-latest
+    timeout-minutes: 120
+
+    needs: [prepare]
+
+    permissions:
+      id-token: write
+      contents: write
+      attestations: write
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v7
+        with:
+          persist-credentials: false
+
+      - name: Build Win64
+        shell: pwsh
+        run: |
+          $ErrorActionPreference = 'Stop'
+          cmd /c build.bat Win64
+          if ($LASTEXITCODE -ne 0) {
+            throw "build.bat Win64 failed with exit code $LASTEXITCODE"
+          }
+
+      - name: Package release archive
+        shell: pwsh
+        env:
+          RELEASE_VERSION: ${{ needs.prepare.outputs.version }}
+        run: |
+          $ErrorActionPreference = 'Stop'
+          $version = $env:RELEASE_VERSION
+          $stage = "dist/WinSCP-$version-win64"
+          New-Item -ItemType Directory -Force -Path $stage | Out-Null
+
+          $binaryDir = 'source/Win64/Release'
+          foreach ($name in @('WinSCP.exe', 'WinSCP.com')) {
+            $path = Join-Path $binaryDir $name
+            if (-not (Test-Path $path)) {
+              throw "Expected shipped binary is missing: $path"
+            }
+            Copy-Item $path $stage
+          }
+
+          foreach ($extra in @('license.txt', 'readme.md')) {
+            if (-not (Test-Path $extra)) {
+              throw "Expected release file is missing: $extra"
+            }
+            Copy-Item $extra $stage
+          }
+
+          $archive = "dist/WinSCP-$version-win64.zip"
+          if (Test-Path $archive) { Remove-Item $archive }
+          Compress-Archive -Path "$stage/*" -DestinationPath $archive
+          Get-ChildItem dist
+
+      - name: Attest release artifact
+        uses: actions/attest@v4
+        with:
+          subject-path: dist/WinSCP-${{ needs.prepare.outputs.version }}-win64.zip
+
+      - name: Verify release attestation
+        env:
+          GH_TOKEN: ${{ github.token }}
+        shell: bash
+        run: |
+          gh attestation verify "dist/WinSCP-${{ needs.prepare.outputs.version }}-win64.zip" \
+            --repo "${{ github.repository }}"
+
+      - name: Publish GitHub release
+        uses: iShark5060/actions-gh-release@v1
+        with:
+          tag_name: ${{ needs.prepare.outputs.tag }}
+          name: WinSCP ${{ needs.prepare.outputs.version }}
+          draft: ${{ inputs.draft }}
+          prerelease: ${{ inputs.prerelease }}
+          generate_release_notes: true
+          files: dist/WinSCP-${{ needs.prepare.outputs.version }}-win64.zip
+          fail_on_unmatched_files: true
+          upload_checksums: true
+
+  sync-tags:
+    needs: [prepare, build-and-release]
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    permissions:
+      contents: read
+      id-token: write
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v7
+
+      - name: Tailscale
+        uses: tailscale/github-action@v4
+        with:
+          oauth-client-id: ${{ secrets.TS_OAUTH_CLIENT_ID }}
+          audience: ${{ secrets.TS_AUDIENCE }}
+          tags: tag:ci
+          ping: git.darkavianlabs.com
+
+      - name: Push release tags to Forgejo
+        env:
+          FORGEJO_TOKEN: ${{ secrets.FORGEJO_TOKEN }}
+          FORGEJO_REPO: shark5060/WinSCP
+          TAG: ${{ needs.prepare.outputs.tag }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          if [ -z "$FORGEJO_TOKEN" ]; then
+            echo "FORGEJO_TOKEN is empty."
+            exit 1
+          fi
+          if [ -z "$TAG" ]; then
+            echo "Release tag is empty."
+            exit 1
+          fi
+
+          has_tag() {
+            git ls-remote origin "refs/tags/$1" | grep -q .
+          }
+
+          refs=()
+          add_tag() {
+            git fetch --force origin "refs/tags/$1:refs/tags/$1"
+            refs+=("refs/tags/$1:refs/tags/$1")
+          }
+
+          if ! has_tag "$TAG"; then
+            echo "Release tag ${TAG} is not on GitHub."
+            exit 1
+          fi
+          add_tag "$TAG"
+
+          if has_tag "${TAG}-src"; then
+            add_tag "${TAG}-src"
+          fi
+
+          if [[ "$TAG" =~ ^v([0-9]+)\.([0-9]+)\.[0-9]+$ ]]; then
+            for name in "v${BASH_REMATCH[1]}" "v${BASH_REMATCH[1]}.${BASH_REMATCH[2]}"; do
+              if has_tag "$name"; then
+                add_tag "$name"
+              fi
+            done
+          fi
+
+          git -c "http.extraHeader=AUTHORIZATION: token ${FORGEJO_TOKEN}" \
+            push --force "https://git.darkavianlabs.com/${FORGEJO_REPO}.git" "${refs[@]}"
+
+  discord-status:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+
+    needs: [prepare, build-and-release, sync-tags]
+    if: ${{ always() }}
+
+    steps:
+      - name: Send Discord status
+        if: ${{ env.DISCORD_WEBHOOK != '' }}
+        env:
+          DISCORD_WEBHOOK: ${{ secrets.DISCORD_WEBHOOK }}
+        uses: iShark5060/actions-discord-status@v1
+        with:
+          webhook: ${{ secrets.DISCORD_WEBHOOK }}
+          job_results: ${{ join(needs.*.result, '\n') }}
+          mention_on: failure
+          content: "<@${{ secrets.DISCORD_USERID }}>"
+          title: ${{ github.workflow }}
+          description: ${{ contains(needs.*.result, 'failure') && format('Release v{0} failed. Review workflow logs before retrying.', needs.prepare.outputs.version) || contains(needs.*.result, 'cancelled') && format('Release v{0} was cancelled.', needs.prepare.outputs.version) || contains(needs.*.result, 'skipped') && format('Release v{0} was skipped.', needs.prepare.outputs.version) || format('Release v{0} succeeded. Windows x64 build is published.', needs.prepare.outputs.version) }}

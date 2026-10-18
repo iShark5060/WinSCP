@@ -1,14 +1,28 @@
-[WinSCP](https://winscp.net/) is a popular free file manager for Windows supporting SFTP, FTP, FTPS, SCP, S3, WebDAV and local-to-local file transfers. A powerful tool to enhance your productivity with a user-friendly interface and automation options like .NET assembly or batch file scripting. Use WinSCP also for file editing, directory synchronization and site management. WinSCP is open-source and well documented. It is available in English and many other languages.
+# WinSCP
 
-To build WinSCP you need:
-- [Embarcadero C++Builder 11 Professional](https://www.embarcadero.com/products/cbuilder).
-- [Build Tools and Agents for Visual Studio 2022](https://visualstudio.microsoft.com/downloads/) (for C# 9.0)
-- [nasm](https://www.nasm.us/) (store it to `buildtools/tools/nasm.exe`)
-- [Object file converter](https://www.agner.org/optimize/#objconv) (store it to `buildtools/tools/objconv.exe`)
+[![PR](https://img.shields.io/github/actions/workflow/status/iShark5060/WinSCP/pr.yml?style=flat-square&label=PR)](https://github.com/iShark5060/WinSCP/actions/workflows/pr.yml)
+![C++Builder](https://img.shields.io/badge/C%2B%2BBuilder-11-E31C23?style=flat-square)
+![Windows](https://img.shields.io/badge/Windows-x64-0078D6?logo=windows&logoColor=white&style=flat-square)
+[![Cursor](https://img.shields.io/badge/Cursor-IDE-141414?logo=cursor&logoColor=white&style=flat-square)](https://cursor.com)
+[![NuGet](https://img.shields.io/nuget/v/WinSCP?style=flat-square&logo=nuget&logoColor=white)](https://www.nuget.org/packages/WinSCP/)
 
-To build WinSCP from source by yourself, modify and use [`build.bat`](build.bat) in root folder.
+WinSCP is a Windows file manager for SFTP, FTP, FTPS, SCP, S3, WebDAV, and local-to-local transfers. It edits files, synchronizes directories, stores sites, and automates transfers with a .NET assembly and scripting.
 
-Directory structure:
+This repository is a fork of [upstream WinSCP](https://github.com/winscp/winscp). It is not an official WinSCP release, and it is not affiliated with Martin Přikryl.
+
+If you use this fork in research, documentation, or redistribution, cite **WinSCP** as the upstream project.
+
+## Building
+
+[C++Builder 11 Professional](https://www.embarcadero.com/products/cbuilder), [Visual Studio 2022 Build Tools](https://visualstudio.microsoft.com/downloads/) for the C# assembly, [nasm](https://www.nasm.us/) at `buildtools/tools/nasm.exe`, and [objconv](https://www.agner.org/optimize/#objconv) at `buildtools/tools/objconv.exe`.
+
+```bat
+build.bat Win64
+```
+
+`build.bat` with no argument builds Win32. The GitHub Actions release workflow builds Win64.
+
+## Directory structure
 
     /source             project files of all native libraries and executables
     /source/components  native WinSCP visual components
@@ -28,6 +42,27 @@ Directory structure:
     /libs               3rd party libraries
     /translations       translations of WinSCP strings
 
-See the file [`license.txt`](license.txt) for the license conditions.
+The setup package is an Inno Setup script. See [`deployment/readme.txt`](deployment/readme.txt).
 
-[![NuGet](https://img.shields.io/nuget/v/WinSCP.svg)](https://www.nuget.org/packages/WinSCP/)
+## Verifying release downloads
+
+Windows x64 release zips from this fork are built by [`.github/workflows/release.yml`](.github/workflows/release.yml) and signed with [GitHub Artifact Attestations](https://docs.github.com/en/actions/security-for-github-actions/using-artifact-attestations/using-artifact-attestations-to-establish-provenance-for-builds).
+
+After downloading a release zip from GitHub, verify it with the [GitHub CLI](https://cli.github.com/), v2.49.0 or newer:
+
+```bash
+gh attestation verify WinSCP-6.7.1-win64.zip --repo iShark5060/WinSCP
+```
+
+Replace `6.7.1` with the release version and use the actual zip filename from the release.
+
+## Licence
+
+WinSCP is GNU GPL v3. See [`license.txt`](license.txt).
+
+## Links
+
+- WinSCP home: <https://winscp.net/>
+- Upstream: <https://github.com/winscp/winscp>
+- NuGet: <https://www.nuget.org/packages/WinSCP/>
+- C++Builder: <https://www.embarcadero.com/products/cbuilder>
