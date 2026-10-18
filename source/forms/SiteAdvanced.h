@@ -335,6 +335,7 @@ public:
   bool __fastcall Execute(TSessionData * SessionData);
 
 protected:
+  virtual void __fastcall CreateWnd();
   void __fastcall ChangePage(TTabSheet * Tab);
   void __fastcall PageChanged();
   virtual void __fastcall Dispatch(void * Message);
