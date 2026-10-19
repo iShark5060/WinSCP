@@ -1,6 +1,5 @@
 # WinSCP
 
-[![PR](https://img.shields.io/github/actions/workflow/status/iShark5060/WinSCP/pr.yml?style=flat-square&label=PR)](https://github.com/iShark5060/WinSCP/actions/workflows/pr.yml)
 ![C++Builder](https://img.shields.io/badge/C%2B%2BBuilder-11-E31C23?style=flat-square)
 ![Windows](https://img.shields.io/badge/Windows-x64-0078D6?logo=windows&logoColor=white&style=flat-square)
 [![Cursor](https://img.shields.io/badge/Cursor-IDE-141414?logo=cursor&logoColor=white&style=flat-square)](https://cursor.com)
