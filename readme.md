@@ -20,7 +20,7 @@ If you use this fork in research, documentation, or redistribution, cite **WinSC
 build.bat Win64
 ```
 
-`build.bat` with no argument builds Win32. The GitHub Actions release workflow builds Win64.
+`build.bat` with no argument builds Win32. Pass `Win64` for the 64-bit build.
 
 ## Directory structure
 
@@ -43,18 +43,6 @@ build.bat Win64
     /translations       translations of WinSCP strings
 
 The setup package is an Inno Setup script. See [`deployment/readme.txt`](deployment/readme.txt).
-
-## Verifying release downloads
-
-Windows x64 release zips from this fork are built by [`.github/workflows/release.yml`](.github/workflows/release.yml) and signed with [GitHub Artifact Attestations](https://docs.github.com/en/actions/security-for-github-actions/using-artifact-attestations/using-artifact-attestations-to-establish-provenance-for-builds).
-
-After downloading a release zip from GitHub, verify it with the [GitHub CLI](https://cli.github.com/), v2.49.0 or newer:
-
-```bash
-gh attestation verify WinSCP-6.7.1-win64.zip --repo iShark5060/WinSCP
-```
-
-Replace `6.7.1` with the release version and use the actual zip filename from the release.
 
 ## Licence
 
