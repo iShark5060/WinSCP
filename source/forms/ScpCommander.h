@@ -498,7 +498,7 @@ __published:
   void __fastcall LocalDirViewExecFile(TObject *Sender, TListItem *Item,
     bool &AllowExec);
   void __fastcall LocalFileControlDDDragEnter(TObject *Sender,
-    IDataObject *DataObj, int grfKeyState, TPoint &Point,
+    Dragdrop::IDataObject DataObj, int grfKeyState, const TPoint &Point,
     int &dwEffect, bool &Accept);
   void __fastcall LocalFileControlDDFileOperation(
     TObject *Sender, int dwEffect, UnicodeString SourcePath, UnicodeString TargetPath,

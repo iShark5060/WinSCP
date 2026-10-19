@@ -1301,7 +1301,7 @@ void __fastcall TScpCommanderForm::LocalDirViewExecFile(TObject *Sender,
 }
 //---------------------------------------------------------------------------
 void __fastcall TScpCommanderForm::LocalFileControlDDDragEnter(TObject *Sender,
-      IDataObject *DataObj, int grfKeyState, TPoint &Point, int &dwEffect,
+      Dragdrop::IDataObject DataObj, int grfKeyState, const TPoint &Point, int &dwEffect,
       bool &Accept)
 {
   // LocalDirViewDDDragEnter is duplication of

@@ -68,7 +68,7 @@ DWORD __fastcall TFileBuffer::ReadStream(TStream * Stream, const DWORD Len, bool
     }
     else
     {
-      Result = Stream->Read(GetPointer(), Len);
+      Result = Stream->Read(GetPointer(), static_cast<System::LongInt>(Len));
     }
     ProcessRead(Len, Result);
   }

@@ -723,6 +723,12 @@ void CollectFormUsage(TForm * Form)
 //---------------------------------------------------------------------------
 static void __fastcall FormShowingChanged(TForm * Form, TWndMethod WndProc, TMessage & Message)
 {
+  // Dialogs only call UseSystemSettings. The main window skins itself.
+  if (Form->Showing && (WinConfiguration != NULL) && (Form != GetMainForm()))
+  {
+    ApplyColorMode(Form);
+  }
+
   if (IsMainFormLike(Form))
   {
     if (Form->Showing)

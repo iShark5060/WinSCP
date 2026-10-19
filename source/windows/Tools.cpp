@@ -15,42 +15,13 @@
 #include <System.Win.ComObj.hpp>
 #include <ProgParams.h>
 //---------------------------------------------------------------------------
-// WORKAROUND
-// VCL includes wininet.h (even with NO_WIN32_LEAN_AND_MEAN)
-// and it cannot be combined with winhttp.h as of current Windows SDK.
-// This is hack to allow that.
-// https://web.archive.org/web/20140612011622/https://social.msdn.microsoft.com/Forums/windowsdesktop/en-US/8f468d9f-3f15-452c-803d-fc63ab3f684e/cannot-use-both-winineth-and-winhttph
+// VCL includes wininet.h. This SDK's winhttp.h skips the shared types
+// when that header was already included, so they can be included together.
 #undef BOOLAPI
 #undef SECURITY_FLAG_IGNORE_CERT_DATE_INVALID
 #undef SECURITY_FLAG_IGNORE_CERT_CN_INVALID
 
-#define URL_COMPONENTS URL_COMPONENTS_ANOTHER
-#define URL_COMPONENTSW URL_COMPONENTSW_ANOTHER
-
-#define LPURL_COMPONENTS LPURL_COMPONENTS_ANOTHER
-#define LPURL_COMPONENTSW LPURL_COMPONENTS_ANOTHER
-
-#define INTERNET_SCHEME INTERNET_SCHEME_ANOTHER
-#define LPINTERNET_SCHEME LPINTERNET_SCHEME_ANOTHER
-
-#define HTTP_VERSION_INFO HTTP_VERSION_INFO_ANOTHER
-#define LPHTTP_VERSION_INFO LPHTTP_VERSION_INFO_ANOTHER
-
 #include <winhttp.h>
-
-#undef URL_COMPONENTS
-#undef URL_COMPONENTSA
-#undef URL_COMPONENTSW
-
-#undef LPURL_COMPONENTS
-#undef LPURL_COMPONENTSA
-#undef LPURL_COMPONENTSW
-
-#undef INTERNET_SCHEME
-#undef LPINTERNET_SCHEME
-
-#undef HTTP_VERSION_INFO
-#undef LPHTTP_VERSION_INFO
 //---------------------------------------------------------------------------
 TFontStyles __fastcall IntToFontStyles(int value)
 {

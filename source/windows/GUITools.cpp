@@ -5,7 +5,9 @@
 #include "GUITools.h"
 
 #include <shlobj.h>
+#define IDataObject ::IDataObject
 #include <mshtmhst.h>
+#undef IDataObject
 
 #include <SessionData.h>
 #include <TBXUtils.hpp>
@@ -1494,7 +1496,7 @@ protected:
     return E_NOTIMPL;
   }
 
-  virtual HRESULT STDMETHODCALLTYPE FilterDataObject(IDataObject *, IDataObject **)
+  virtual HRESULT STDMETHODCALLTYPE FilterDataObject(::IDataObject *, ::IDataObject **)
   {
     return E_NOTIMPL;
   }
