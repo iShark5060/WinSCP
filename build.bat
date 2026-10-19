@@ -94,7 +94,8 @@ if errorlevel 1 exit /B 1
 
 if "%WITH_DOTNET%"=="0" goto SKIP_DOTNET
 dotnet --version >nul 2>&1
-if errorlevel 1 (
+rem dotnet.com returns a negative code when no SDK is installed. "if errorlevel 1" misses that.
+if not "%ERRORLEVEL%"=="0" (
   echo Skipping WinSCPnet. Install a .NET SDK to build the assembly.
   goto SKIP_DOTNET
 )
