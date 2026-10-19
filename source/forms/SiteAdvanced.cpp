@@ -1119,6 +1119,12 @@ void __fastcall TSiteAdvancedDialog::DataChange(TObject * /*Sender*/)
   }
 }
 //---------------------------------------------------------------------------
+void __fastcall TSiteAdvancedDialog::CreateWnd()
+{
+  TForm::CreateWnd();
+  ApplyColorMode(this);
+}
+//---------------------------------------------------------------------------
 void __fastcall TSiteAdvancedDialog::FormShow(TObject * /*Sender*/)
 {
   InstallPathWordBreakProc(PrivateKeyEdit3);

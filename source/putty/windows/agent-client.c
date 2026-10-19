@@ -18,18 +18,68 @@
 
 AuthAgentImplementation auth_agent_implementation = AAI_PAGEANT;
 
+#define WINSCP_OPENSSH_AGENT_PIPE "\\\\.\\pipe\\openssh-ssh-agent"
+
+static bool winscp_pipe_present(const char *pipename)
+{
+    WIN32_FIND_DATA data;
+    HANDLE ffh;
+
+    if (!pipename)
+        return false;
+    ffh = FindFirstFile(pipename, &data);
+    if (ffh == INVALID_HANDLE_VALUE)
+        return false;
+    FindClose(ffh);
+    return true;
+}
+
+/* \\.\pipe\<one component>. A Unix socket path is not a Windows agent. */
+static bool winscp_openssh_pipe_path_ok(const char *path)
+{
+    const char prefix[] = "\\\\.\\pipe\\";
+    const char *leaf;
+
+    if (!path || strncmp(path, prefix, sizeof(prefix) - 1) != 0)
+        return false;
+    leaf = path + (sizeof(prefix) - 1);
+    return *leaf != '\0' && strchr(leaf, '\\') == NULL;
+}
+
+static bool winscp_pageant_running(void)
+{
+    char *pipename = agent_named_pipe_name();
+    bool pipe = winscp_pipe_present(pipename);
+
+    sfree(pipename);
+    return pipe || FindWindow("Pageant", "Pageant") != NULL;
+}
+
+/* The preferences combo can force OpenSSH. Otherwise Pageant wins while it is up. */
+static bool winscp_use_openssh_agent(void)
+{
+    if (auth_agent_implementation == AAI_OPENSSH)
+        return true;
+    return !winscp_pageant_running();
+}
+
 static char *_agent_named_pipe_name(void)
 {
-    if (auth_agent_implementation == AAI_OPENSSH) {
-        return dupstr("\\\\.\\pipe\\openssh-ssh-agent");
-    } else {
+    const char *env;
+
+    if (!winscp_use_openssh_agent())
         return agent_named_pipe_name();
-    }
+
+    env = getenv("SSH_AUTH_SOCK");
+    if (winscp_openssh_pipe_path_ok(env) && winscp_pipe_present(env))
+        return dupstr(env);
+    return dupstr(WINSCP_OPENSSH_AGENT_PIPE);
 }
 
 static bool agent_allow_system(void)
 {
-    return (auth_agent_implementation == AAI_OPENSSH);
+    /* The Windows OpenSSH service owns its pipe as SYSTEM. */
+    return winscp_use_openssh_agent();
 }
 
 #define agent_named_pipe_name _agent_named_pipe_name

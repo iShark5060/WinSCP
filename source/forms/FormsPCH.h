@@ -1,5 +1,9 @@
 #include <CorePCH.h>
 
+#define IDataObject ::IDataObject
+#include <mshtmhst.h>
+#undef IDataObject
+
 #include <Vcl.Consts.hpp>
 
 #include <GUITools.h>

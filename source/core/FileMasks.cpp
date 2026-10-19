@@ -521,7 +521,7 @@ NORETURN void __fastcall TFileMasks::ThrowError(int Start, int End)
 //---------------------------------------------------------------------------
 Masks::TMask * TFileMasks::DoCreateMaskMask(const UnicodeString & Str)
 {
-  return new Masks::TMask(Str);
+  return new Masks::TMask(Str, false);
 }
 //---------------------------------------------------------------------------
 void __fastcall TFileMasks::CreateMaskMask(

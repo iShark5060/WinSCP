@@ -455,6 +455,32 @@ static void authplugin_bad_packet(struct ssh2_userauth_state *s,
     strbuf_free(msg);
 }
 
+#ifdef WINSCP
+/* Fingerprint text is "alg bits SHA256:...". Compare the hash so a plain
+ * public key still selects the agent key when that key is a certificate. */
+static bool winscp_same_key_sha256(ptrlen a, ptrlen b)
+{
+    char *fa = ssh2_fingerprint_blob(a, SSH_FPTYPE_SHA256);
+    char *fb = ssh2_fingerprint_blob(b, SSH_FPTYPE_SHA256);
+    const char *ha = fa;
+    const char *hb = fb;
+    bool match = false;
+
+    if (fa && fb) {
+        for (const char *p = fa; *p; p++)
+            if (*p == ' ')
+                ha = p + 1;
+        for (const char *p = fb; *p; p++)
+            if (*p == ' ')
+                hb = p + 1;
+        match = strcmp(ha, hb) == 0;
+    }
+    sfree(fa);
+    sfree(fb);
+    return match;
+}
+#endif
+
 static void ssh2_userauth_process_queue(PacketProtocolLayer *ppl)
 {
     struct ssh2_userauth_state *s =
@@ -641,9 +667,13 @@ static void ssh2_userauth_process_queue(PacketProtocolLayer *ppl)
                 size_t i;
 
                 for (i = 0; i < nkeys; i++) {
-                    if (ptrlen_eq_ptrlen(our_blob, ptrlen_from_strbuf(
-                                             s->agent_keys[i].blob)))
+                    ptrlen agent_blob = ptrlen_from_strbuf(s->agent_keys[i].blob);
+                    if (ptrlen_eq_ptrlen(our_blob, agent_blob))
                         break;
+#ifdef WINSCP
+                    if (winscp_same_key_sha256(our_blob, agent_blob))
+                        break;
+#endif
                 }
 
                 if (i < nkeys) {

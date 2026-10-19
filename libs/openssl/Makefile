@@ -65,7 +65,10 @@ ASM_ARG=-Ox -f elf64 -DNEAR
 ASM_ARG=-d__omf__ -f obj
 !endif
 
-ASM=$(BUILDTOOLS)\tools\nasm $(ASM_ARG) -DWINSCP
+!ifndef NASM
+NASM=$(BUILDTOOLS)\tools\nasm
+!endif
+ASM="$(NASM)" $(ASM_ARG) -DWINSCP
 
 ######################################################
 # You should not need to touch anything below this point

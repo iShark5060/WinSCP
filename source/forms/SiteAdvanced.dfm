@@ -1925,9 +1925,10 @@ object SiteAdvancedDialog: TSiteAdvancedDialog
             OnAfterDialog = PrivateKeyEdit3AfterDialog
             Filter = 
               'PuTTY Private Key Files (*.ppk)|*.ppk|All Private Key Files (*.p' +
-              'pk;*.pem;*.key;id_*)|*.ppk;*.pem;*.key;id_*|All Files (*.*)|*.*'
+              'pk;*.pem;*.key;id_*)|*.ppk;*.pem;*.key;id_*|Public Key Files (*.' +
+              'pub)|*.pub|All Files (*.*)|*.*'
             DialogOptions = [ofReadOnly, ofPathMustExist, ofFileMustExist]
-            DialogTitle = 'Select private key file'
+            DialogTitle = 'Select key file'
             ClickKey = 16397
             Anchors = [akLeft, akTop, akRight]
             TabOrder = 0
@@ -2388,9 +2389,10 @@ object SiteAdvancedDialog: TSiteAdvancedDialog
             OnAfterDialog = PrivateKeyEdit3AfterDialog
             Filter = 
               'PuTTY Private Key Files (*.ppk)|*.ppk|All Private Key Files (*.p' +
-              'pk;*.pem;*.key;id_*)|*.ppk;*.pem;*.key;id_*|All Files (*.*)|*.*'
+              'pk;*.pem;*.key;id_*)|*.ppk;*.pem;*.key;id_*|Public Key Files (*.' +
+              'pub)|*.pub|All Files (*.*)|*.*'
             DialogOptions = [ofReadOnly, ofPathMustExist, ofFileMustExist]
-            DialogTitle = 'Select private key file'
+            DialogTitle = 'Select key file'
             ClickKey = 16397
             Anchors = [akLeft, akTop, akRight]
             TabOrder = 1
