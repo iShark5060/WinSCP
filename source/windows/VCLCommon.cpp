@@ -342,7 +342,8 @@ static void __fastcall ReadOnlyEditWindowProc(void * Data, TMessage & Message)
 {
   TCustomEdit * Edit = static_cast<TCustomEdit *>(Data);
   if (((Message.Msg == WM_WINDOWPOSCHANGED) || (Message.Msg == CN_CTLCOLORSTATIC)) &&
-      Edit->ReadOnly)
+      Edit->ReadOnly &&
+      StyleServices()->Enabled)
   {
     // https://stackoverflow.com/q/75759034/850848#75764544
     // (see my comment to the answer)
@@ -377,6 +378,7 @@ static void __fastcall ReadOnlyEditWindowProc(void * Data, TMessage & Message)
           HBITMAP Bitmap = CreateCompatibleBitmap(DC, Parent->Width, Parent->Height);
           HBITMAP BitmapOld = static_cast<HBITMAP>(SelectObject(DCNew, Bitmap));
 
+          // using WM_PRINT or preceding WM_PRINTCLIENT with WM_ERASEBKGND would be more appropriate
           Parent->Perform(WM_PRINTCLIENT, reinterpret_cast<WPARAM>(DCNew), static_cast<LPARAM>(PRF_ERASEBKGND | PRF_CLIENT | PRF_NONCLIENT));
           BrushComponent->Brush = CreatePatternBrush(Bitmap);
           SelectObject(DCNew, BitmapOld);
@@ -962,14 +964,21 @@ static TComPtr<IAccPropServices> AccPropServices;
 void SetAccessibleName(TWinControl * Control, const UnicodeString & AccName)
 {
   DebugAssert(Control->HandleAllocated());
-  OleCheck(AccPropServices->SetHwndPropStr(Control->Handle, OBJID_CLIENT, CHILDID_SELF, PROPID_ACC_NAME, AccName.c_str()));
+  if (AccPropServices.Get() != nullptr)
+  {
+    AccPropServices->SetHwndPropStr(Control->Handle, OBJID_CLIENT, CHILDID_SELF, PROPID_ACC_NAME, AccName.c_str());
+  }
 }
 //---------------------------------------------------------------------------
 void SetAccessibleRole(TWinControl * Control, int Role)
 {
   DebugAssert(Control->HandleAllocated());
-  VARIANT RoleVariant = { .vt = VT_I4, .lVal = Role };
-  OleCheck(AccPropServices->SetHwndProp(Control->Handle, OBJID_CLIENT, CHILDID_SELF, PROPID_ACC_ROLE, RoleVariant));
+  if (AccPropServices.Get() != nullptr)
+  {
+    VARIANT RoleVariant = { .vt = VT_I4, .lVal = Role };
+    // ignore errors (wine does not implement it)
+    AccPropServices->SetHwndProp(Control->Handle, OBJID_CLIENT, CHILDID_SELF, PROPID_ACC_ROLE, RoleVariant);
+  }
 }
 //---------------------------------------------------------------------------
 static void ControlExposeLabels(TWinControl * Control)
