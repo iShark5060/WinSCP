@@ -13,7 +13,9 @@ If you use this fork in research, documentation, or redistribution, cite **WinSC
 
 ## Building
 
-[C++Builder 11 Professional](https://www.embarcadero.com/products/cbuilder), [Visual Studio 2022 Build Tools](https://visualstudio.microsoft.com/downloads/) for the C# assembly, [nasm](https://www.nasm.us/) at `buildtools/tools/nasm.exe`, and [objconv](https://www.agner.org/optimize/#objconv) at `buildtools/tools/objconv.exe`.
+[C++Builder 11 Professional](https://www.embarcadero.com/products/cbuilder). The Community Edition is missing headers this build needs, including `include\windows\crtl` and `include\windows\sdk`. [Visual Studio 2022 Build Tools](https://visualstudio.microsoft.com/downloads/) with "Desktop development with C++" and ".NET desktop build tools" for the C# assembly. [nasm](https://www.nasm.us/) at `buildtools/tools/nasm.exe`, and [objconv](https://www.agner.org/optimize/#objconv) at `buildtools/tools/objconv.exe`.
+
+Extract the source to a path with no spaces or dashes.
 
 ```bat
 build.bat Win64
