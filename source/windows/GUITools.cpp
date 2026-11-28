@@ -137,6 +137,7 @@ bool __fastcall ExportSessionToPutty(TSessionData * SessionData, bool ReuseExist
       AppLogFmt(L"Exported site settings to PuTTY session: %s", (SessionName));
     }
   }
+  Storage->Flush();
   return Result;
 }
 //---------------------------------------------------------------------------
@@ -306,6 +307,7 @@ void TPuttyCleanupThread::DoExecute(bool HasExpired)
     }
 
   }
+  Storage->Flush();
 }
 //---------------------------------------------------------------------------
 class TPuttyPasswordThread : public TStandaloneThread
@@ -481,6 +483,7 @@ void OpenSessionInPutty(TSessionData * SessionData)
         HostKeySessionList->Add(SessionData);
         int Imported =
           TStoredSessionList::ImportHostKeys(SourceHostKeyStorage.get(), TargetHostKeyStorage.get(), HostKeySessionList.get(), false, true);
+        TargetHostKeyStorage->Flush();
         AppLogFmt(L"Imported host keys: %d", (Imported));
       }
 

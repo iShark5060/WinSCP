@@ -1693,7 +1693,7 @@ UnicodeString ConvertPathFromOpenssh(const UnicodeString & Path)
   return Result;
 }
 //---------------------------------------------------------------------
-void TSessionData::ImportFromOpenssh(TStrings * Lines)
+void TSessionData::ImportFromOpenssh(TStrings * Lines, bool IsJump)
 {
   bool SkippingSection = false;
   std::unique_ptr<TStrings> UsedDirectives(CreateSortedStringList());
@@ -1777,7 +1777,7 @@ void TSessionData::ImportFromOpenssh(TStrings * Lines)
           }
           else if (SameText(Directive, L"GSSAPIDelegateCredentials"))
           {
-            AuthGSSAPIKEX = OpensshBoolValue(Value);
+            GSSAPIFwdTGT = OpensshBoolValue(Value);
           }
           else if (SameText(Directive, L"Hostname"))
           {
@@ -1803,10 +1803,11 @@ void TSessionData::ImportFromOpenssh(TStrings * Lines)
           {
             UserName = Value;
           }
-          else if (SameText(Directive, L"ProxyJump"))
+          // multiple jumps are not supported
+          else if (!IsJump && SameText(Directive, L"ProxyJump"))
           {
             UnicodeString Jump = Value;
-            // multiple jumps are not supported
+            // dtto
             if (Jump.Pos(L",") == 0)
             {
               std::unique_ptr<TSessionData> JumpData(new TSessionData(EmptyStr));
@@ -1815,7 +1816,7 @@ void TSessionData::ImportFromOpenssh(TStrings * Lines)
                   !JumpData->HostName.IsEmpty())
               {
                 JumpData->Name = JumpData->HostName;
-                JumpData->ImportFromOpenssh(Lines);
+                JumpData->ImportFromOpenssh(Lines, true);
 
                 Tunnel = true;
                 TunnelHostName = JumpData->HostName;
@@ -2047,6 +2048,7 @@ void __fastcall TSessionData::Remove()
     {
       Remove(Storage, InternalStorageKey);
     }
+    Storage->Flush();
   }
   __finally
   {
@@ -2072,6 +2074,7 @@ void __fastcall TSessionData::CacheHostKeyIfNotCached()
       // modified to accept also fingerprint
       Storage->WriteString(HostKeyName, HostKey);
     }
+    Storage->Flush();
   }
 }
 //---------------------------------------------------------------------
@@ -5017,6 +5020,7 @@ void __fastcall TStoredSessionList::DoSave(bool All, bool Explicit,
     {
       DoSave(Storage, All, RecryptPasswordOnly, RecryptPasswordErrors);
     }
+    Storage->Flush();
   }
   __finally
   {
@@ -5244,7 +5248,7 @@ void TStoredSessionList::ImportFromOpenssh(TStrings * Lines)
             Data->CopyData(DefaultSettings);
             Data->Name = Name;
             Data->HostName = Name;
-            Data->ImportFromOpenssh(Lines);
+            Data->ImportFromOpenssh(Lines, false);
             Add(Data.release());
             Hosts->Add(Name);
           }
@@ -5264,6 +5268,7 @@ void __fastcall TStoredSessionList::Export(const UnicodeString FileName)
     {
       Save(Storage, true);
     }
+    Storage->Flush();
   }
   __finally
   {
@@ -5324,6 +5329,7 @@ void __fastcall TStoredSessionList::Cleanup()
       Storage->AccessMode = smReadWrite;
       if (Storage->OpenRootKey(False))
         Storage->RecursiveDeleteSubKey(Configuration->StoredSessionsSubKey);
+      Storage->Flush();
     }
     __finally
     {
@@ -5605,6 +5611,7 @@ void TStoredSessionList::ImportHostKeys(
   std::unique_ptr<THierarchicalStorage> TargetStorage(CreateHostKeysStorageForWriting());
 
   ImportHostKeys(SourceStorage, TargetStorage.get(), Sessions, OnlySelected, false);
+  TargetStorage->Flush();
 }
 //---------------------------------------------------------------------------
 void TStoredSessionList::ImportHostKeys(
@@ -5638,6 +5645,7 @@ void __fastcall TStoredSessionList::ImportSelectedKnownHosts(TStoredSessionList 
       }
     }
   }
+  Storage->Flush();
 }
 //---------------------------------------------------------------------------
 void TStoredSessionList::SelectKnownHostsForSelectedSessions(
